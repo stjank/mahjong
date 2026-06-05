@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/tile.dart';
+import '../models/tile_type.dart';
 
 // ── Configuration constants ───────────────────────────────────────────────────
 
@@ -154,110 +155,99 @@ class BoardPainter extends CustomPainter {
     }
   }
 
+  // ── Category colours ──────────────────────────────────────────────────────
+
+  static Color _bgColor(Tile tile, bool isFree, bool isSelected, bool isHint) {
+    if (isSelected) return const Color(0xFFB3E5FC); // sky blue
+    if (isHint)     return const Color(0xFFFFF59D); // soft yellow
+    if (!isFree)    return const Color(0xFFCFD8DC); // muted blue-grey
+    switch (tile.type.category) {
+      case TileCategory.characters: return const Color(0xFFFFCDD2); // rose
+      case TileCategory.bamboo:     return const Color(0xFFC8E6C9); // mint
+      case TileCategory.circles:    return const Color(0xFFBBDEFB); // sky
+      case TileCategory.wind:       return const Color(0xFFE1BEE7); // lavender
+      case TileCategory.dragon:     return const Color(0xFFFFECB3); // amber
+      case TileCategory.flower:     return const Color(0xFFF8BBD0); // pink
+      case TileCategory.season:     return const Color(0xFFFFCCBC); // peach
+    }
+  }
+
+  static Color _textColor(Tile tile, bool isFree, bool isSelected) {
+    if (isSelected) return const Color(0xFF01579B);
+    if (!isFree)    return const Color(0xFF90A4AE); // muted grey
+    switch (tile.type.category) {
+      case TileCategory.characters: return const Color(0xFFC62828);
+      case TileCategory.bamboo:     return const Color(0xFF2E7D32);
+      case TileCategory.circles:    return const Color(0xFF1565C0);
+      case TileCategory.wind:       return const Color(0xFF6A1B9A);
+      case TileCategory.dragon:     return const Color(0xFFE65100);
+      case TileCategory.flower:     return const Color(0xFFAD1457);
+      case TileCategory.season:     return const Color(0xFFBF360C);
+    }
+  }
+
   void _drawTile(Canvas canvas, Tile tile) {
     final origin = tileOrigin(tile);
     final isFree = tile.isFree(tiles);
     final isSelected = tile.id == selectedId;
     final isHint = hintIds.contains(tile.id);
 
-    // ── 3-D shadow/depth effect ───────────────────────────────────────────
-    // Draw a slightly-offset shadow rectangle to simulate stack depth.
-    final shadowPaint = Paint()..color = const Color(0xFF2D5A27);
-    final shadowRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(origin.dx + 2, origin.dy + 2, kTileW, kTileH),
-      const Radius.circular(4),
+    // ── Soft drop shadow ─────────────────────────────────────────────────
+    final shadowPaint = Paint()
+      ..color = const Color(0x44000000); // 27% opacity black
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(origin.dx + 2, origin.dy + 3, kTileW, kTileH),
+        const Radius.circular(5),
+      ),
+      shadowPaint,
     );
-    canvas.drawRRect(shadowRect, shadowPaint);
 
     // ── Tile background ───────────────────────────────────────────────────
-    Color bgColor;
-    if (isSelected) {
-      bgColor = const Color(0xFFAED6F1); // light blue
-    } else if (isHint) {
-      bgColor = const Color(0xFFFFF176); // yellow hint
-    } else if (isFree) {
-      bgColor = const Color(0xFFFFFDE7); // cream / ivory
-    } else {
-      bgColor = const Color(0xFFBDBDBD); // grey — blocked
-    }
-
-    final bgPaint = Paint()..color = bgColor;
+    final bg = _bgColor(tile, isFree, isSelected, isHint);
     final tileRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(origin.dx, origin.dy, kTileW, kTileH),
-      const Radius.circular(4),
+      const Radius.circular(5),
     );
-    canvas.drawRRect(tileRect, bgPaint);
+    canvas.drawRRect(tileRect, Paint()..color = bg);
 
-    // ── 3-D border: lighter top-left, darker bottom-right ────────────────
-    final highlightPaint = Paint()
-      ..color = Colors.white.withAlpha(200)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final shadowBorderPaint = Paint()
-      ..color = Colors.black.withAlpha(80)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    // Top edge
+    // ── Subtle bevel ─────────────────────────────────────────────────────
     canvas.drawLine(
       Offset(origin.dx + 4, origin.dy + 1),
       Offset(origin.dx + kTileW - 4, origin.dy + 1),
-      highlightPaint,
+      Paint()..color = Colors.white.withAlpha(160)..strokeWidth = 1.0,
     );
-    // Left edge
     canvas.drawLine(
       Offset(origin.dx + 1, origin.dy + 4),
       Offset(origin.dx + 1, origin.dy + kTileH - 4),
-      highlightPaint,
+      Paint()..color = Colors.white.withAlpha(160)..strokeWidth = 1.0,
     );
-    // Bottom edge
     canvas.drawLine(
       Offset(origin.dx + 4, origin.dy + kTileH - 1),
       Offset(origin.dx + kTileW - 4, origin.dy + kTileH - 1),
-      shadowBorderPaint,
-    );
-    // Right edge
-    canvas.drawLine(
-      Offset(origin.dx + kTileW - 1, origin.dy + 4),
-      Offset(origin.dx + kTileW - 1, origin.dy + kTileH - 4),
-      shadowBorderPaint,
+      Paint()..color = Colors.black.withAlpha(40)..strokeWidth = 1.0,
     );
 
     // ── Selection / hint outline ──────────────────────────────────────────
     if (isSelected || isHint) {
-      final outlinePaint = Paint()
-        ..color = isSelected ? const Color(0xFF1565C0) : const Color(0xFFF57F17)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5;
-      canvas.drawRRect(tileRect, outlinePaint);
+      canvas.drawRRect(
+        tileRect,
+        Paint()
+          ..color = isSelected ? const Color(0xFF0277BD) : const Color(0xFFF9A825)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5,
+      );
     }
 
     // ── Tile label ────────────────────────────────────────────────────────
-    _drawTileLabel(canvas, tile, origin, isFree, isSelected);
-  }
-
-  void _drawTileLabel(
-    Canvas canvas,
-    Tile tile,
-    Offset origin,
-    bool isFree,
-    bool isSelected,
-  ) {
     final label = tile.type.displayText;
-
-    // Choose font size: single characters get larger text
     final fontSize = label.length <= 1 ? 22.0 : (label.length == 2 ? 16.0 : 13.0);
-
-    final textColor = isSelected
-        ? const Color(0xFF0D47A1)
-        : (isFree ? Colors.black87 : Colors.grey[600]!);
-
     final textPainter = TextPainter(
       text: TextSpan(
         text: label,
         style: TextStyle(
           fontSize: fontSize,
-          color: textColor,
+          color: _textColor(tile, isFree, isSelected),
           fontWeight: FontWeight.bold,
           height: 1.1,
         ),
@@ -266,12 +256,13 @@ class BoardPainter extends CustomPainter {
       textAlign: TextAlign.center,
     );
     textPainter.layout(maxWidth: kTileW - 4);
-
-    final textOffset = Offset(
-      origin.dx + (kTileW - textPainter.width) / 2,
-      origin.dy + (kTileH - textPainter.height) / 2,
+    textPainter.paint(
+      canvas,
+      Offset(
+        origin.dx + (kTileW - textPainter.width) / 2,
+        origin.dy + (kTileH - textPainter.height) / 2,
+      ),
     );
-    textPainter.paint(canvas, textOffset);
   }
 
   @override
