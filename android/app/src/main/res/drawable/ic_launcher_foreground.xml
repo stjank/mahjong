@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Tile background -->
+    <path
+        android:fillColor="#FFF9C4"
+        android:pathData="M24,28 L84,28 Q88,28 88,32 L88,76 Q88,80 84,80 L24,80 Q20,80 20,76 L20,32 Q20,28 24,28 Z"/>
+    <!-- Chinese character for "dragon" (中) simplified -->
+    <path
+        android:fillColor="#1B4332"
+        android:pathData="M50,38 L58,38 L58,42 L55,42 L55,66 L58,66 L58,70 L50,70 L50,66 L53,66 L53,42 L50,42 Z"/>
+    <path
+        android:fillColor="#1B4332"
+        android:pathData="M42,50 L66,50 L66,54 L42,54 Z"/>
+</vector>
