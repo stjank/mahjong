@@ -25,9 +25,9 @@ Offset tileOrigin(Tile tile) {
 
 // ── BoardWidget ───────────────────────────────────────────────────────────────
 
-// Board bounding box (layer 0 grid extends to x=26, y=12 in half-units)
-const double kBoardWidth = 26 * (kTileW / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
-const double kBoardHeight = 12 * (kTileH / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
+// Board bounding box: layer 0 reaches x=14 (→ extent 16) and y=16 (→ extent 18)
+const double kBoardWidth = 16 * (kTileW / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
+const double kBoardHeight = 18 * (kTileH / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
 
 class BoardWidget extends StatefulWidget {
   const BoardWidget({super.key});

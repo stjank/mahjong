@@ -36,14 +36,15 @@ class GameState extends ChangeNotifier {
 
   // ── Layout definition ─────────────────────────────────────────────────────
 
-  /// Returns the list of all (x, y, layer) positions for the Classic Pyramid.
+  /// Returns the list of all (x, y, layer) positions for the Portrait Pyramid.
   /// Total: 72 + 36 + 20 + 12 + 4 = 144 tiles.
+  /// The layout is taller than wide (8 cols × 9 rows base) to suit portrait screens.
   static List<(int x, int y, int layer)> _buildLayout() {
     final positions = <(int, int, int)>[];
 
-    // Layer 0: x in {2,4,6,...,24} (12 values), y in {0,2,4,6,8,10} (6 values) → 72
-    for (int x = 2; x <= 24; x += 2) {
-      for (int y = 0; y <= 10; y += 2) {
+    // Layer 0: x in {0,2,...,14} (8 values), y in {0,2,...,16} (9 values) → 72
+    for (int x = 0; x <= 14; x += 2) {
+      for (int y = 0; y <= 16; y += 2) {
         positions.add((x, y, 0));
       }
     }
@@ -52,9 +53,9 @@ class GameState extends ChangeNotifier {
       'Layer 0 should have 72 tiles',
     );
 
-    // Layer 1: x in {4,6,...,20} (9 values), y in {2,4,6,8} (4 values) → 36
-    for (int x = 4; x <= 20; x += 2) {
-      for (int y = 2; y <= 8; y += 2) {
+    // Layer 1: x in {2,4,...,12} (6 values), y in {2,4,...,12} (6 values) → 36
+    for (int x = 2; x <= 12; x += 2) {
+      for (int y = 2; y <= 12; y += 2) {
         positions.add((x, y, 1));
       }
     }
@@ -63,9 +64,9 @@ class GameState extends ChangeNotifier {
       'Layer 1 should have 36 tiles',
     );
 
-    // Layer 2: x in {8,10,12,14,16} (5 values), y in {2,4,6,8} (4 values) → 20
-    for (int x = 8; x <= 16; x += 2) {
-      for (int y = 2; y <= 8; y += 2) {
+    // Layer 2: x in {4,6,8,10} (4 values), y in {4,6,8,10,12} (5 values) → 20
+    for (int x = 4; x <= 10; x += 2) {
+      for (int y = 4; y <= 12; y += 2) {
         positions.add((x, y, 2));
       }
     }
@@ -74,9 +75,9 @@ class GameState extends ChangeNotifier {
       'Layer 2 should have 20 tiles',
     );
 
-    // Layer 3: x in {10,12,14} (3 values), y in {2,4,6,8} (4 values) → 12
-    for (int x = 10; x <= 14; x += 2) {
-      for (int y = 2; y <= 8; y += 2) {
+    // Layer 3: x in {4,6,8,10} (4 values), y in {6,8,10} (3 values) → 12
+    for (int x = 4; x <= 10; x += 2) {
+      for (int y = 6; y <= 10; y += 2) {
         positions.add((x, y, 3));
       }
     }
@@ -85,9 +86,9 @@ class GameState extends ChangeNotifier {
       'Layer 3 should have 12 tiles',
     );
 
-    // Layer 4: x in {12,14} (2 values), y in {4,6} (2 values) → 4
-    for (int x = 12; x <= 14; x += 2) {
-      for (int y = 4; y <= 6; y += 2) {
+    // Layer 4: x in {6,8} (2 values), y in {6,8} (2 values) → 4
+    for (int x = 6; x <= 8; x += 2) {
+      for (int y = 6; y <= 8; y += 2) {
         positions.add((x, y, 4));
       }
     }
