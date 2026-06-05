@@ -25,35 +25,77 @@ Offset tileOrigin(Tile tile) {
 
 // ── BoardWidget ───────────────────────────────────────────────────────────────
 
-class BoardWidget extends StatelessWidget {
+// Board bounding box (layer 0 grid extends to x=26, y=12 in half-units)
+const double kBoardWidth = 26 * (kTileW / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
+const double kBoardHeight = 12 * (kTileH / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
+
+class BoardWidget extends StatefulWidget {
   const BoardWidget({super.key});
+
+  @override
+  State<BoardWidget> createState() => _BoardWidgetState();
+}
+
+class _BoardWidgetState extends State<BoardWidget> {
+  final TransformationController _transform = TransformationController();
+  Size _lastViewport = Size.zero;
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  /// Scales and centres the board to fill the available viewport on first load
+  /// and whenever the viewport size changes (e.g. keyboard appearance).
+  void _fitBoard(Size viewport) {
+    if (viewport == _lastViewport) return;
+    _lastViewport = viewport;
+
+    final scale = (viewport.width / kBoardWidth)
+        .clamp(0.3, 1.0);
+    final scaledW = kBoardWidth * scale;
+    final scaledH = kBoardHeight * scale;
+    final tx = (viewport.width - scaledW) / 2;
+    final ty = (viewport.height - scaledH) / 2 > 0
+        ? (viewport.height - scaledH) / 2
+        : 0.0;
+
+    _transform.value = Matrix4.identity()
+      ..translate(tx, ty)
+      ..scale(scale);
+  }
 
   @override
   Widget build(BuildContext context) {
     final gameState = context.watch<GameState>();
     final tiles = gameState.tiles;
 
-    // Board bounding box (layer 0 grid extends to x=26, y=12 in half-units)
-    const boardWidth = 26 * (kTileW / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
-    const boardHeight = 12 * (kTileH / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _fitBoard(Size(constraints.maxWidth, constraints.maxHeight));
 
-    return InteractiveViewer(
-      minScale: 0.4,
-      maxScale: 3.0,
-      boundaryMargin: const EdgeInsets.all(80),
-      child: GestureDetector(
-        onTapUp: (details) {
-          _handleTap(details.localPosition, tiles, gameState);
-        },
-        child: CustomPaint(
-          size: const Size(boardWidth, boardHeight),
-          painter: BoardPainter(
-            tiles: tiles,
-            selectedId: gameState.selectedTileId,
-            hintIds: gameState.hintIds,
+        return InteractiveViewer(
+          transformationController: _transform,
+          minScale: 0.3,
+          maxScale: 3.0,
+          constrained: false,
+          boundaryMargin: const EdgeInsets.all(40),
+          child: GestureDetector(
+            onTapUp: (details) {
+              _handleTap(details.localPosition, tiles, gameState);
+            },
+            child: CustomPaint(
+              size: const Size(kBoardWidth, kBoardHeight),
+              painter: BoardPainter(
+                tiles: tiles,
+                selectedId: gameState.selectedTileId,
+                hintIds: gameState.hintIds,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
