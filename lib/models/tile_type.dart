@@ -19,6 +19,29 @@ class TileType {
     required this.displayText,
   });
 
+  /// Asset filename (without extension) inside assets/tiles/.
+  String get imageName {
+    switch (category) {
+      case TileCategory.characters:
+        return 'pinyin$value';
+      case TileCategory.bamboo:
+        return 'bamboo$value';
+      case TileCategory.circles:
+        return 'circle$value';
+      case TileCategory.wind:
+        return 'pinyin${9 + value}'; // pinyin10–13
+      case TileCategory.dragon:
+        if (value == 3) return 'tile'; // White Dragon → blank tile image
+        return 'pinyin${13 + value}'; // pinyin14–15
+      case TileCategory.flower:
+        const names = ['peony', 'orchid', 'chrysanthemum', 'lotus'];
+        return names[value - 1];
+      case TileCategory.season:
+        const names = ['spring', 'summer', 'fall', 'winter'];
+        return names[value - 1];
+    }
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

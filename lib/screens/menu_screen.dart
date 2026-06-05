@@ -49,6 +49,12 @@ class MenuScreen extends StatelessWidget {
               ),
               const SizedBox(height: 48),
               _RulesPanel(),
+              const SizedBox(height: 24),
+              const Text(
+                'Tile artwork by Code Inferno (codeinferno.com)\nCC BY 3.0',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
             ],
           ),
         ),
