@@ -238,28 +238,56 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Shuffle remaining free tiles ─────────────────────────────────────────
+  // ── Shuffle all remaining tiles ───────────────────────────────────────────
 
   void shuffleFreeTiles() {
     _hintIds = [];
+    _selectedTileId = null;
 
-    final freeTiles = _tiles.where((t) => !t.removed && t.isFree(_tiles)).toList();
-    if (freeTiles.length < 2) return;
+    // Redistribute types across ALL remaining tiles so buried tiles can surface.
+    final remaining = _tiles.where((t) => !t.removed).toList();
+    if (remaining.length < 2) return;
 
-    // Collect their types, shuffle them, reassign
-    final types = freeTiles.map((t) => t.type).toList()..shuffle(_random);
-
-    for (int i = 0; i < _tiles.length; i++) {
-      final idx = freeTiles.indexWhere((ft) => ft.id == _tiles[i].id);
-      if (idx >= 0) {
-        _tiles[i] = _tiles[i].copyWith(type: types[idx], selected: false);
-      }
+    final types = remaining.map((t) => t.type).toList()..shuffle(_random);
+    for (int i = 0; i < remaining.length; i++) {
+      final idx = _tiles.indexWhere((t) => t.id == remaining[i].id);
+      _tiles[idx] = _tiles[idx].copyWith(type: types[i], selected: false);
     }
 
-    _selectedTileId = null;
-    _gameOver = false;
+    // Guarantee at least one free matching pair after the shuffle.
+    _ensureFreePair();
 
+    _gameOver = false;
     notifyListeners();
+  }
+
+  /// If no free matching pair exists, swap a non-free tile's type with a free
+  /// tile so that two free tiles share a matching type. Preserves type counts.
+  void _ensureFreePair() {
+    if (_findMatchingPair() != null) return;
+
+    final free = _tiles.where((t) => !t.removed && t.isFree(_tiles)).toList();
+    if (free.length < 2) return;
+
+    for (final anchor in free) {
+      // Find a free tile that doesn't already match anchor.
+      final mismatchIdx = _tiles.indexWhere((t) =>
+          !t.removed &&
+          t.isFree(_tiles) &&
+          t.id != anchor.id &&
+          !tilesMatch(t.type, anchor.type));
+      if (mismatchIdx < 0) continue;
+
+      // Find a non-free tile whose type matches anchor — swap it in.
+      final donorIdx = _tiles.indexWhere((t) =>
+          !t.removed && !t.isFree(_tiles) && tilesMatch(t.type, anchor.type));
+      if (donorIdx < 0) continue;
+
+      final displaced = _tiles[mismatchIdx].type;
+      _tiles[mismatchIdx] = _tiles[mismatchIdx].copyWith(type: _tiles[donorIdx].type);
+      _tiles[donorIdx] = _tiles[donorIdx].copyWith(type: displaced);
+      return;
+    }
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

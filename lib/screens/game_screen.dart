@@ -162,9 +162,10 @@ class _BottomBar extends StatelessWidget {
     final noMoves =
         !gameState.gameWon && !gameState.hasMovesAvailable && remaining > 0;
 
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
       color: const Color(0xFF0D2818),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 8 + bottomInset),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
