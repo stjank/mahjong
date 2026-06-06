@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../models/game_state.dart';
 import '../layouts/layouts.dart';
 
@@ -82,6 +83,8 @@ class MenuScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white38, fontSize: 11),
                 ),
+                const SizedBox(height: 8),
+                const _VersionLabel(),
               ],
             ),
           ),
@@ -208,6 +211,35 @@ class _RulesPanel extends StatelessWidget {
           Text('• Clear all tiles to win!', style: style),
         ],
       ),
+    );
+  }
+}
+
+// ── Version label ─────────────────────────────────────────────────────────────
+
+class _VersionLabel extends StatefulWidget {
+  const _VersionLabel();
+
+  @override
+  State<_VersionLabel> createState() => _VersionLabelState();
+}
+
+class _VersionLabelState extends State<_VersionLabel> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _version = 'v${info.version}');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _version,
+      style: const TextStyle(color: Colors.white24, fontSize: 11),
     );
   }
 }
