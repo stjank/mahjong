@@ -7,19 +7,21 @@ import '../models/tile.dart';
 
 const double kTileW = 52.0;
 const double kTileH = 68.0;
-const double kLayerOffsetX = 3.0;
-const double kLayerOffsetY = 3.0;
+const double kTileGapX = 4.0;  // horizontal gap between adjacent tiles
+const double kTileGapY = 4.0;  // vertical gap between adjacent tiles
+const double kLayerOffsetX = 6.0; // px shift left per layer (3-D depth)
+const double kLayerOffsetY = 5.0; // px shift up per layer
 const double kBoardPadding = 24.0;
 
 // Board bounding box: layer 0 reaches x=14 (→ extent 16) and y=16 (→ extent 18)
-const double kBoardWidth  = 16 * (kTileW / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
-const double kBoardHeight = 18 * (kTileH / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
+const double kBoardWidth  = 16 * ((kTileW + kTileGapX) / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
+const double kBoardHeight = 18 * ((kTileH + kTileGapY) / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
 
 // ── Coordinate helper ─────────────────────────────────────────────────────────
 
 Offset tileOrigin(Tile tile) {
-  final px = tile.x * (kTileW / 2) - tile.layer * kLayerOffsetX + kBoardPadding;
-  final py = tile.y * (kTileH / 2) - tile.layer * kLayerOffsetY + kBoardPadding;
+  final px = tile.x * ((kTileW + kTileGapX) / 2) - tile.layer * kLayerOffsetX + kBoardPadding;
+  final py = tile.y * ((kTileH + kTileGapY) / 2) - tile.layer * kLayerOffsetY + kBoardPadding;
   return Offset(px, py);
 }
 
