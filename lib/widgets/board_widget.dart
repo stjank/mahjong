@@ -10,7 +10,7 @@ const double kTileH = 68.0;
 const double kTileGapX = 4.0;  // horizontal gap between adjacent tiles
 const double kTileGapY = 4.0;  // vertical gap between adjacent tiles
 const double kLayerOffsetX = 0.0; // no horizontal shift — layers align vertically
-const double kLayerOffsetY = 5.0; // px shift up per layer (stacking illusion)
+const double kLayerOffsetY = 8.0; // px shift up per layer (stacking illusion)
 const double kBoardPadding = 24.0;
 
 // Board bounding box: layer 0 reaches x=14 (→ extent 16) and y=16 (→ extent 18)
