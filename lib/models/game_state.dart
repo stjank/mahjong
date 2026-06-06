@@ -20,6 +20,7 @@ class GameState extends ChangeNotifier {
   bool _gameWon = false;
   List<int> _hintIds = [];
   final _stopwatch = Stopwatch();
+  Duration _penalty = Duration.zero; // accumulated shuffle penalties
 
   final _undoStack = <_RemovedPair>[];
   final _random = Random();
@@ -33,7 +34,7 @@ class GameState extends ChangeNotifier {
   bool get gameOver => _gameOver;
   bool get gameWon => _gameWon;
   List<int> get hintIds => _hintIds;
-  Duration get elapsed => _stopwatch.elapsed;
+  Duration get elapsed => _stopwatch.elapsed + _penalty;
 
   int get tilesRemaining => _tiles.where((t) => !t.removed).length;
 
@@ -56,6 +57,7 @@ class GameState extends ChangeNotifier {
     _gameOver = false;
     _gameWon = false;
     _hintIds = [];
+    _penalty = Duration.zero;
     _stopwatch
       ..reset()
       ..start();
@@ -185,6 +187,7 @@ class GameState extends ChangeNotifier {
   void shuffleFreeTiles() {
     _hintIds = [];
     _selectedTileId = null;
+    _penalty += const Duration(seconds: 10); // shuffle penalty
 
     // Redistribute types across ALL remaining tiles so buried tiles can surface.
     final remaining = _tiles.where((t) => !t.removed).toList();

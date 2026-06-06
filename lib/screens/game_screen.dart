@@ -180,6 +180,13 @@ class _GameScreenState extends State<GameScreen> {
                 },
               ),
               IconButton(
+                icon: const Icon(Icons.shuffle),
+                tooltip: 'Shuffle (+10s)',
+                onPressed: gameState.gameWon
+                    ? null
+                    : () => gameState.shuffleFreeTiles(),
+              ),
+              IconButton(
                 icon: const Icon(Icons.home),
                 tooltip: 'Menu',
                 onPressed: () {
@@ -277,16 +284,9 @@ class _BottomBar extends StatelessWidget {
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           if (noMoves)
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.black,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              icon: const Icon(Icons.shuffle, size: 18),
-              label: const Text('No Moves! Shuffle'),
-              onPressed: () => gameState.shuffleFreeTiles(),
+            const Text(
+              'No moves — tap shuffle',
+              style: TextStyle(color: Colors.orange, fontSize: 13),
             ),
         ],
       ),
