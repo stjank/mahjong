@@ -110,7 +110,7 @@ final LayoutDef layoutPortraitPyramid = LayoutDef(
 /// Twin Towers — two identical 4-wide pyramids side by side. (144 tiles)
 final LayoutDef layoutTwinTowers = LayoutDef(
   id: 'twin_towers',
-  name: 'Twin Towers',
+  name: 'Two Stacks',
   description: 'Two side-by-side pyramids\n144 tiles · 4 layers',
   positions: _build(() {
     final p = <(int, int, int)>[];
