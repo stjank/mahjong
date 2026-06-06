@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'models/game_state.dart';
+import 'services/hall_of_fame.dart';
 import 'screens/menu_screen.dart';
 import 'screens/game_screen.dart';
+import 'screens/hall_of_fame_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final hof = HallOfFame();
+  await hof.load();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => GameState(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameState()),
+        ChangeNotifierProvider.value(value: hof),
+      ],
       child: const MahjongApp(),
     ),
   );
@@ -38,6 +47,7 @@ class MahjongApp extends StatelessWidget {
       routes: {
         '/': (_) => const MenuScreen(),
         '/game': (_) => const GameScreen(),
+        '/hof': (_) => const HallOfFameScreen(),
       },
     );
   }

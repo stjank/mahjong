@@ -38,19 +38,41 @@ class MenuScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 const _LayoutPicker(),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    context.read<GameState>().initGame();
-                    Navigator.pushNamed(context, '/game');
-                  },
-                  child: const Text('New Game'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 16),
+                        textStyle: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        context.read<GameState>().initGame();
+                        Navigator.pushNamed(context, '/game');
+                      },
+                      child: const Text('New Game'),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.amber,
+                        side: const BorderSide(color: Colors.amber),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/hof'),
+                      child: const Icon(Icons.emoji_events),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 32),
                 _RulesPanel(),

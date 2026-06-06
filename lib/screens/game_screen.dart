@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
+import '../services/hall_of_fame.dart';
 import '../widgets/board_widget.dart';
 
 class GameScreen extends StatefulWidget {
@@ -16,14 +18,25 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reset dialog tracker when game is reset (tiles reload)
     final gs = context.read<GameState>();
     if (!gs.gameWon) _winDialogShown = false;
   }
 
-  void _maybeShowWinDialog(GameState gameState) {
+  Future<void> _maybeShowWinDialog(GameState gameState) async {
     if (!gameState.gameWon || _winDialogShown) return;
     _winDialogShown = true;
+
+    // Record to hall of fame and find rank
+    final hof = context.read<HallOfFame>();
+    final rank = await hof.addEntry(
+      gameState.layout.id,
+      gameState.elapsed.inSeconds,
+    );
+
+    if (!mounted) return;
+
+    final timeStr = _formatDuration(gameState.elapsed);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       showDialog<void>(
@@ -32,21 +45,60 @@ class _GameScreenState extends State<GameScreen> {
         builder: (_) => AlertDialog(
           backgroundColor: const Color(0xFF1B4332),
           title: const Text(
-            'You Win!',
+            'You Win! 🎉',
             style: TextStyle(
               color: Colors.amber,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
           ),
-          content: Text(
-            'Congratulations!\nFinal score: ${gameState.score}',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            textAlign: TextAlign.center,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                timeStr,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              if (rank != null)
+                Text(
+                  rank == 1
+                      ? '🥇 New record!'
+                      : rank == 2
+                          ? '🥈 Rank #$rank'
+                          : rank == 3
+                              ? '🥉 Rank #$rank'
+                              : 'Rank #$rank',
+                  style: TextStyle(
+                    color: rank == 1 ? Colors.amber : Colors.white70,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              const SizedBox(height: 4),
+              Text(
+                'Score: ${gameState.score}',
+                style: const TextStyle(color: Colors.white54, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.white70),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/hof');
+              },
+              child: const Text('Records'),
+            ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
@@ -58,14 +110,6 @@ class _GameScreenState extends State<GameScreen> {
                 gameState.resetGame();
               },
               child: const Text('Play Again'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: Colors.white70),
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
-              },
-              child: const Text('Main Menu'),
             ),
           ],
         ),
@@ -86,31 +130,32 @@ class _GameScreenState extends State<GameScreen> {
             foregroundColor: Colors.white,
             title: Row(
               children: [
-                const Icon(Icons.grid_on, color: Colors.amber, size: 20),
-                const SizedBox(width: 8),
+                const Icon(Icons.grid_on, color: Colors.amber, size: 18),
+                const SizedBox(width: 6),
                 Text(
-                  'Score: ${gameState.score}',
+                  '${gameState.score}',
                   style: const TextStyle(
                     color: Colors.amber,
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
+                const Spacer(),
+                _TimerDisplay(gameState: gameState),
               ],
             ),
             actions: [
-              // Undo button
               IconButton(
                 icon: const Icon(Icons.undo),
                 tooltip: 'Undo',
-                onPressed: gameState.canUndo
-                    ? () => gameState.undoLastMove()
-                    : null,
+                onPressed:
+                    gameState.canUndo ? () => gameState.undoLastMove() : null,
               ),
-              // Hint button
               IconButton(
                 icon: Icon(
                   Icons.lightbulb_outline,
-                  color: gameState.hintIds.isNotEmpty ? Colors.amber : null,
+                  color:
+                      gameState.hintIds.isNotEmpty ? Colors.amber : null,
                 ),
                 tooltip: 'Hint',
                 onPressed: () {
@@ -121,12 +166,12 @@ class _GameScreenState extends State<GameScreen> {
                   }
                 },
               ),
-              // Menu button
               IconButton(
                 icon: const Icon(Icons.home),
                 tooltip: 'Menu',
                 onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/', (_) => false);
                 },
               ),
             ],
@@ -136,11 +181,8 @@ class _GameScreenState extends State<GameScreen> {
               Expanded(
                 child: gameState.tiles.isEmpty
                     ? const Center(
-                        child: Text(
-                          'Loading...',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      )
+                        child: Text('Loading…',
+                            style: TextStyle(color: Colors.white)))
                     : const BoardWidget(),
               ),
               _BottomBar(gameState: gameState),
@@ -152,17 +194,65 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
+// ── Timer display (ticks independently, doesn't rebuild the board) ─────────
+
+class _TimerDisplay extends StatefulWidget {
+  final GameState gameState;
+  const _TimerDisplay({required this.gameState});
+
+  @override
+  State<_TimerDisplay> createState() => _TimerDisplayState();
+}
+
+class _TimerDisplayState extends State<_TimerDisplay> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && !widget.gameState.gameWon) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _formatDuration(widget.gameState.elapsed),
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 16,
+        fontFeatures: [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+String _formatDuration(Duration d) {
+  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$m:$s';
+}
+
+// ── Bottom bar ────────────────────────────────────────────────────────────────
+
 class _BottomBar extends StatelessWidget {
   final GameState gameState;
   const _BottomBar({required this.gameState});
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final remaining = gameState.tilesRemaining;
     final noMoves =
         !gameState.gameWon && !gameState.hasMovesAvailable && remaining > 0;
 
-    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
       color: const Color(0xFF0D2818),
       padding: EdgeInsets.fromLTRB(16, 8, 16, 8 + bottomInset),
@@ -178,7 +268,8 @@ class _BottomBar extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               icon: const Icon(Icons.shuffle, size: 18),
               label: const Text('No Moves! Shuffle'),

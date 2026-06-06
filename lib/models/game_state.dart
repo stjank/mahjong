@@ -19,6 +19,7 @@ class GameState extends ChangeNotifier {
   bool _gameOver = false;
   bool _gameWon = false;
   List<int> _hintIds = [];
+  final _stopwatch = Stopwatch();
 
   final _undoStack = <_RemovedPair>[];
   final _random = Random();
@@ -32,6 +33,7 @@ class GameState extends ChangeNotifier {
   bool get gameOver => _gameOver;
   bool get gameWon => _gameWon;
   List<int> get hintIds => _hintIds;
+  Duration get elapsed => _stopwatch.elapsed;
 
   int get tilesRemaining => _tiles.where((t) => !t.removed).length;
 
@@ -54,6 +56,9 @@ class GameState extends ChangeNotifier {
     _gameOver = false;
     _gameWon = false;
     _hintIds = [];
+    _stopwatch
+      ..reset()
+      ..start();
 
     final positions = List.of(_layout.positions)..shuffle(_random);
     final tileBag = buildTileBag(_layout.tileCount)..shuffle(_random);
@@ -110,6 +115,7 @@ class GameState extends ChangeNotifier {
         if (_tiles.every((t) => t.removed)) {
           _gameWon = true;
           _gameOver = true;
+          _stopwatch.stop();
         } else if (!hasMovesAvailable) {
           // No remaining moves — game over (player can shuffle though)
           _gameOver = true;
