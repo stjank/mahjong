@@ -38,41 +38,8 @@ Offset tileOrigin(Tile tile) {
 
 // ── BoardWidget ───────────────────────────────────────────────────────────────
 
-class BoardWidget extends StatefulWidget {
+class BoardWidget extends StatelessWidget {
   const BoardWidget({super.key});
-
-  @override
-  State<BoardWidget> createState() => _BoardWidgetState();
-}
-
-class _BoardWidgetState extends State<BoardWidget> {
-  final TransformationController _transform = TransformationController();
-  Size _lastViewport = Size.zero;
-  Size _lastBoardSize = Size.zero;
-
-  @override
-  void dispose() {
-    _transform.dispose();
-    super.dispose();
-  }
-
-  void _fitBoard(Size viewport, Size boardSize) {
-    if (viewport == _lastViewport && boardSize == _lastBoardSize) return;
-    _lastViewport = viewport;
-    _lastBoardSize = boardSize;
-
-    final scale = (viewport.width / boardSize.width).clamp(0.3, 1.0);
-    final scaledW = boardSize.width * scale;
-    final scaledH = boardSize.height * scale;
-    final tx = (viewport.width - scaledW) / 2;
-    final ty = (viewport.height - scaledH) / 2 > 0
-        ? (viewport.height - scaledH) / 2
-        : 0.0;
-
-    _transform.value = Matrix4.identity()
-      ..translate(tx, ty)
-      ..scale(scale);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,55 +47,44 @@ class _BoardWidgetState extends State<BoardWidget> {
     final tiles = gameState.tiles;
     final boardSize = layoutBoardSize(gameState.layout.positions);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _fitBoard(Size(constraints.maxWidth, constraints.maxHeight), boardSize);
+    // Sort tiles back-to-front so higher layers render on top of lower ones.
+    final sorted = tiles.where((t) => !t.removed).toList()
+      ..sort((a, b) =>
+          a.layer != b.layer ? a.layer.compareTo(b.layer) : a.y.compareTo(b.y));
 
-        // Sort tiles back-to-front so higher layers paint over lower ones.
-        final sorted = tiles.where((t) => !t.removed).toList()
-          ..sort((a, b) =>
-              a.layer != b.layer ? a.layer.compareTo(b.layer) : a.y.compareTo(b.y));
+    final tileWidgets = sorted.map((tile) {
+      final origin = tileOrigin(tile);
+      return Positioned(
+        key: ValueKey(tile.id),
+        left: origin.dx,
+        top: origin.dy,
+        width: kTileW,
+        height: kTileH,
+        child: _TileImage(
+          imageName: tile.type.imageName,
+          isFree: tile.isFree(tiles),
+          isSelected: tile.id == gameState.selectedTileId,
+          isHint: gameState.hintIds.contains(tile.id),
+        ),
+      );
+    }).toList();
 
-        final tileWidgets = sorted.map((tile) {
-          final origin = tileOrigin(tile);
-          final isFree = tile.isFree(tiles);
-          final isSelected = tile.id == gameState.selectedTileId;
-          final isHint = gameState.hintIds.contains(tile.id);
-
-          return Positioned(
-            key: ValueKey(tile.id),
-            left: origin.dx,
-            top: origin.dy,
-            width: kTileW,
-            height: kTileH,
-            child: _TileImage(
-              imageName: tile.type.imageName,
-              isFree: isFree,
-              isSelected: isSelected,
-              isHint: isHint,
-            ),
-          );
-        }).toList();
-
-        return InteractiveViewer(
-          transformationController: _transform,
-          minScale: 0.3,
-          maxScale: 3.0,
-          constrained: false,
-          boundaryMargin: const EdgeInsets.all(40),
-          child: GestureDetector(
-            onTapUp: (details) => _handleTap(details.localPosition, tiles, gameState),
-            child: SizedBox(
-              width: boardSize.width,
-              height: boardSize.height,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: tileWidgets,
-              ),
-            ),
+    // FittedBox scales the board to fill the available space while keeping it
+    // fixed in place — no InteractiveViewer means no accidental panning.
+    // Tap coordinates inside GestureDetector are automatically in board space.
+    return FittedBox(
+      fit: BoxFit.contain,
+      child: GestureDetector(
+        onTapUp: (details) => _handleTap(details.localPosition, tiles, gameState),
+        child: SizedBox(
+          width: boardSize.width,
+          height: boardSize.height,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: tileWidgets,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
