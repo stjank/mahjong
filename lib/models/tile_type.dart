@@ -151,41 +151,25 @@ final List<TileType> seasonTiles = List.generate(
   ),
 );
 
-/// Full bag of 144 tile types (with duplicates as per game rules).
-///
-/// - Characters 1-9 × 4 = 36
-/// - Bamboo 1-9 × 4 = 36
-/// - Circles 1-9 × 4 = 36
-/// - Winds × 4 each = 16
-/// - Dragons × 4 each = 12
-/// - Flowers × 1 each = 4
-/// - Seasons × 1 each = 4
-/// Total = 144
-List<TileType> buildTileBag() {
+/// Builds a shuffleable bag of [count] tile types (must be even).
+/// Cycles through all unique types in pairs until [count] is reached.
+List<TileType> buildTileBag([int count = 144]) {
+  assert(count.isEven, 'Tile count must be even');
+
+  final allTypes = [
+    ...characterTiles, ...bambooTiles, ...circleTiles,
+    ...windTiles, ...dragonTiles, ...flowerTiles, ...seasonTiles,
+  ]; // 42 unique types
+
   final bag = <TileType>[];
-
-  for (final t in characterTiles) {
-    for (int i = 0; i < 4; i++) bag.add(t);
-  }
-  for (final t in bambooTiles) {
-    for (int i = 0; i < 4; i++) bag.add(t);
-  }
-  for (final t in circleTiles) {
-    for (int i = 0; i < 4; i++) bag.add(t);
-  }
-  for (final t in windTiles) {
-    for (int i = 0; i < 4; i++) bag.add(t);
-  }
-  for (final t in dragonTiles) {
-    for (int i = 0; i < 4; i++) bag.add(t);
-  }
-  for (final t in flowerTiles) {
-    bag.add(t); // only 1 copy each
-  }
-  for (final t in seasonTiles) {
-    bag.add(t); // only 1 copy each
+  int i = 0;
+  while (bag.length < count) {
+    final t = allTypes[i % allTypes.length];
+    bag.add(t);
+    bag.add(t);
+    i++;
   }
 
-  assert(bag.length == 144, 'Tile bag must have 144 tiles, got ${bag.length}');
+  assert(bag.length == count);
   return bag;
 }

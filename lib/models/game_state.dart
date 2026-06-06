@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'tile.dart';
 import 'tile_type.dart';
+import '../layouts/layouts.dart';
 
 /// Immutable record of a removed pair (for undo).
 class _RemovedPair {
@@ -11,6 +12,7 @@ class _RemovedPair {
 }
 
 class GameState extends ChangeNotifier {
+  LayoutDef _layout = allLayouts.first;
   List<Tile> _tiles = [];
   int? _selectedTileId;
   int _score = 0;
@@ -23,6 +25,7 @@ class GameState extends ChangeNotifier {
 
   // ── Public read-only getters ──────────────────────────────────────────────
 
+  LayoutDef get layout => _layout;
   List<Tile> get tiles => _tiles;
   int? get selectedTileId => _selectedTileId;
   int get score => _score;
@@ -34,73 +37,14 @@ class GameState extends ChangeNotifier {
 
   bool get hasMovesAvailable => _findMatchingPair() != null;
 
+  void selectLayout(LayoutDef layout) {
+    _layout = layout;
+    notifyListeners();
+  }
+
   // ── Layout definition ─────────────────────────────────────────────────────
 
   /// Returns the list of all (x, y, layer) positions for the Portrait Pyramid.
-  /// Total: 72 + 36 + 20 + 12 + 4 = 144 tiles.
-  /// The layout is taller than wide (8 cols × 9 rows base) to suit portrait screens.
-  static List<(int x, int y, int layer)> _buildLayout() {
-    final positions = <(int, int, int)>[];
-
-    // Layer 0: x in {0,2,...,14} (8 values), y in {0,2,...,16} (9 values) → 72
-    for (int x = 0; x <= 14; x += 2) {
-      for (int y = 0; y <= 16; y += 2) {
-        positions.add((x, y, 0));
-      }
-    }
-    assert(
-      positions.where((p) => p.$3 == 0).length == 72,
-      'Layer 0 should have 72 tiles',
-    );
-
-    // Layer 1: x in {2,4,...,12} (6 values), y in {2,4,...,12} (6 values) → 36
-    for (int x = 2; x <= 12; x += 2) {
-      for (int y = 2; y <= 12; y += 2) {
-        positions.add((x, y, 1));
-      }
-    }
-    assert(
-      positions.where((p) => p.$3 == 1).length == 36,
-      'Layer 1 should have 36 tiles',
-    );
-
-    // Layer 2: x in {4,6,8,10} (4 values), y in {4,6,8,10,12} (5 values) → 20
-    for (int x = 4; x <= 10; x += 2) {
-      for (int y = 4; y <= 12; y += 2) {
-        positions.add((x, y, 2));
-      }
-    }
-    assert(
-      positions.where((p) => p.$3 == 2).length == 20,
-      'Layer 2 should have 20 tiles',
-    );
-
-    // Layer 3: x in {4,6,8,10} (4 values), y in {6,8,10} (3 values) → 12
-    for (int x = 4; x <= 10; x += 2) {
-      for (int y = 6; y <= 10; y += 2) {
-        positions.add((x, y, 3));
-      }
-    }
-    assert(
-      positions.where((p) => p.$3 == 3).length == 12,
-      'Layer 3 should have 12 tiles',
-    );
-
-    // Layer 4: x in {6,8} (2 values), y in {6,8} (2 values) → 4
-    for (int x = 6; x <= 8; x += 2) {
-      for (int y = 6; y <= 8; y += 2) {
-        positions.add((x, y, 4));
-      }
-    }
-    assert(
-      positions.where((p) => p.$3 == 4).length == 4,
-      'Layer 4 should have 4 tiles',
-    );
-
-    assert(positions.length == 144, 'Layout must have 144 positions, got ${positions.length}');
-    return positions;
-  }
-
   // ── Game initialization ───────────────────────────────────────────────────
 
   void initGame() {
@@ -111,21 +55,13 @@ class GameState extends ChangeNotifier {
     _gameWon = false;
     _hintIds = [];
 
-    final positions = _buildLayout();
+    final positions = List.of(_layout.positions)..shuffle(_random);
+    final tileBag = buildTileBag(_layout.tileCount)..shuffle(_random);
 
-    // Shuffle positions
-    final shuffledPositions = List.of(positions)..shuffle(_random);
+    assert(positions.length == tileBag.length);
 
-    // Build tile bag and shuffle
-    final tileBag = buildTileBag()..shuffle(_random);
-
-    assert(
-      shuffledPositions.length == tileBag.length,
-      'Position count (${shuffledPositions.length}) must equal tile bag size (${tileBag.length})',
-    );
-
-    _tiles = List.generate(144, (i) {
-      final pos = shuffledPositions[i];
+    _tiles = List.generate(positions.length, (i) {
+      final pos = positions[i];
       return Tile(
         id: i,
         type: tileBag[i],

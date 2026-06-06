@@ -13,9 +13,20 @@ const double kLayerOffsetX = 0.0; // no horizontal shift — layers align vertic
 const double kLayerOffsetY = 8.0; // px shift up per layer (stacking illusion)
 const double kBoardPadding = 24.0;
 
-// Board bounding box: layer 0 reaches x=14 (→ extent 16) and y=16 (→ extent 18)
-const double kBoardWidth  = 16 * ((kTileW + kTileGapX) / 2) + kBoardPadding * 2 + 5 * kLayerOffsetX;
-const double kBoardHeight = 18 * ((kTileH + kTileGapY) / 2) + kBoardPadding * 2 + 5 * kLayerOffsetY;
+/// Computes the canvas size needed for [positions] given the current tile constants.
+Size layoutBoardSize(List<(int x, int y, int layer)> positions) {
+  if (positions.isEmpty) return const Size(300, 400);
+  int maxX = 0, maxY = 0, maxLayer = 0;
+  for (final p in positions) {
+    if (p.$1 > maxX) maxX = p.$1;
+    if (p.$2 > maxY) maxY = p.$2;
+    if (p.$3 > maxLayer) maxLayer = p.$3;
+  }
+  final w = (maxX + 2) * ((kTileW + kTileGapX) / 2) + kBoardPadding * 2;
+  final h = (maxY + 2) * ((kTileH + kTileGapY) / 2) + kBoardPadding * 2
+      + maxLayer * kLayerOffsetY;
+  return Size(w, h);
+}
 
 // ── Coordinate helper ─────────────────────────────────────────────────────────
 
@@ -37,6 +48,7 @@ class BoardWidget extends StatefulWidget {
 class _BoardWidgetState extends State<BoardWidget> {
   final TransformationController _transform = TransformationController();
   Size _lastViewport = Size.zero;
+  Size _lastBoardSize = Size.zero;
 
   @override
   void dispose() {
@@ -44,13 +56,14 @@ class _BoardWidgetState extends State<BoardWidget> {
     super.dispose();
   }
 
-  void _fitBoard(Size viewport) {
-    if (viewport == _lastViewport) return;
+  void _fitBoard(Size viewport, Size boardSize) {
+    if (viewport == _lastViewport && boardSize == _lastBoardSize) return;
     _lastViewport = viewport;
+    _lastBoardSize = boardSize;
 
-    final scale = (viewport.width / kBoardWidth).clamp(0.3, 1.0);
-    final scaledW = kBoardWidth * scale;
-    final scaledH = kBoardHeight * scale;
+    final scale = (viewport.width / boardSize.width).clamp(0.3, 1.0);
+    final scaledW = boardSize.width * scale;
+    final scaledH = boardSize.height * scale;
     final tx = (viewport.width - scaledW) / 2;
     final ty = (viewport.height - scaledH) / 2 > 0
         ? (viewport.height - scaledH) / 2
@@ -65,10 +78,11 @@ class _BoardWidgetState extends State<BoardWidget> {
   Widget build(BuildContext context) {
     final gameState = context.watch<GameState>();
     final tiles = gameState.tiles;
+    final boardSize = layoutBoardSize(gameState.layout.positions);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _fitBoard(Size(constraints.maxWidth, constraints.maxHeight));
+        _fitBoard(Size(constraints.maxWidth, constraints.maxHeight), boardSize);
 
         // Sort tiles back-to-front so higher layers paint over lower ones.
         final sorted = tiles.where((t) => !t.removed).toList()
@@ -105,8 +119,8 @@ class _BoardWidgetState extends State<BoardWidget> {
           child: GestureDetector(
             onTapUp: (details) => _handleTap(details.localPosition, tiles, gameState),
             child: SizedBox(
-              width: kBoardWidth,
-              height: kBoardHeight,
+              width: boardSize.width,
+              height: boardSize.height,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: tileWidgets,
