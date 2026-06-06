@@ -235,6 +235,16 @@ class GameState extends ChangeNotifier {
     }
   }
 
+  // ── Timer pause / resume ─────────────────────────────────────────────────
+
+  void pauseTimer() {
+    if (_stopwatch.isRunning) _stopwatch.stop();
+  }
+
+  void resumeTimer() {
+    if (!_gameWon && !_stopwatch.isRunning) _stopwatch.start();
+  }
+
   // ── Private helpers ───────────────────────────────────────────────────────
 
   Tile? _tileById(int id) {
