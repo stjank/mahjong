@@ -187,7 +187,7 @@ class GameState extends ChangeNotifier {
   void shuffleFreeTiles() {
     _hintIds = [];
     _selectedTileId = null;
-    _penalty += const Duration(seconds: 10); // shuffle penalty
+    _penalty += const Duration(seconds: 5); // shuffle penalty
 
     // Redistribute types across ALL remaining tiles so buried tiles can surface.
     final remaining = _tiles.where((t) => !t.removed).toList();

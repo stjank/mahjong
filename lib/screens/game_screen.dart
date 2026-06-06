@@ -94,12 +94,6 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-              const SizedBox(height: 4),
-              Text(
-                'Score: ${gameState.score}',
-                style: const TextStyle(color: Colors.white54, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
           actionsAlignment: MainAxisAlignment.center,
@@ -143,16 +137,6 @@ class _GameScreenState extends State<GameScreen> {
             foregroundColor: Colors.white,
             title: Row(
               children: [
-                const Icon(Icons.grid_on, color: Colors.amber, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  '${gameState.score}',
-                  style: const TextStyle(
-                    color: Colors.amber,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
                 const Spacer(),
                 _TimerDisplay(gameState: gameState),
               ],
